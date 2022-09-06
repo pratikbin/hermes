@@ -23,14 +23,13 @@ use crate::chain::cosmos::types::events::channel::parse_timeout_height;
 use crate::chain::cosmos::types::events::from_tx_response_event;
 use crate::chain::cosmos::types::tx::{TxStatus, TxSyncResult};
 use crate::chain::endpoint::ChainStatus;
-use crate::chain::psql_cosmos::snapshot::{IbcSnapshot, PacketId};
 use crate::chain::requests::*;
 use crate::client_state::IdentifiedAnyClientState;
 use crate::consensus_state::{AnyConsensusState, AnyConsensusStateWithHeight};
 use crate::error::Error;
 use crate::event::IbcEventWithHeight;
+use crate::snapshot::{IbcSnapshot, Key, PacketId};
 
-use super::snapshot::Key;
 use super::PsqlError;
 
 /// This function queries transactions for events matching certain criteria.

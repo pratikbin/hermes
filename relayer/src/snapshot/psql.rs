@@ -1,10 +1,30 @@
+use async_trait::async_trait;
 use bigdecimal::BigDecimal;
 use sqlx::types::Json;
 use sqlx::PgPool;
 
-use crate::error::Error;
+use crate::{chain::requests::QueryHeight, error::Error};
 
-use super::{IbcSnapshot, KEEP_SNAPSHOTS};
+use super::{IbcSnapshot, SnapshotManager, KEEP_SNAPSHOTS};
+
+pub struct PsqlSnapshotManager {
+    pool: PgPool,
+}
+
+#[async_trait]
+impl SnapshotManager for PsqlSnapshotManager {
+    async fn fetch_snapshot(&self, query_height: QueryHeight) -> Result<IbcSnapshot, Error> {
+        fetch_snapshot(&self.pool, query_height).await
+    }
+
+    async fn update_snapshot(&mut self, snapshot: &IbcSnapshot) -> Result<(), Error> {
+        update_snapshot(&self.pool, snapshot).await
+    }
+
+    async fn vacuum_snapshots(&mut self, at_or_below: u64) -> Result<(), Error> {
+        vacuum_snapshots(&self.pool, at_or_below).await
+    }
+}
 
 /// Create the `ibc_json` table if it does not exists yet
 #[tracing::instrument(skip(pool))]
@@ -24,11 +44,27 @@ pub async fn create_table(pool: &PgPool) -> Result<(), Error> {
     Ok(())
 }
 
+#[tracing::instrument(skip(pool))]
+pub async fn fetch_snapshot(
+    pool: &PgPool,
+    query_height: QueryHeight,
+) -> Result<IbcSnapshot, Error> {
+    let query = match query_height {
+        QueryHeight::Latest => {
+            sqlx::query_as::<_, IbcSnapshot>("SELECT * FROM ibc_json ORDER BY height DESC LIMIT 1")
+        }
+        QueryHeight::Specific(h) => {
+            sqlx::query_as::<_, IbcSnapshot>("SELECT * FROM ibc_json WHERE height = $1 LIMIT 1")
+                .bind(BigDecimal::from(h.revision_height()))
+        }
+    };
+
+    query.fetch_one(pool).await.map_err(Error::sqlx)
+}
+
 #[tracing::instrument(skip(pool, snapshot))]
 pub async fn update_snapshot(pool: &PgPool, snapshot: &IbcSnapshot) -> Result<(), Error> {
     crate::time!("update_snapshot");
-
-    // dbg!(&snapshot);
 
     // create the ibc table if it does not exist
     create_table(pool).await?;

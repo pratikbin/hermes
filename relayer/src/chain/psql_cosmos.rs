@@ -36,12 +36,7 @@ use crate::{
         client::ClientSettings,
         cosmos::{query::account::get_or_fetch_account, CosmosSdkChain},
         endpoint::{ChainEndpoint, ChainStatus, HealthCheck},
-        psql_cosmos::{
-            batch::send_batched_messages_and_wait_commit,
-            query::*,
-            snapshot::psql::update_snapshot,
-            snapshot::{Key, PacketId},
-        },
+        psql_cosmos::{batch::send_batched_messages_and_wait_commit, query::*},
         requests::*,
         tracking::TrackedMsgs,
     },
@@ -56,14 +51,13 @@ use crate::{
     },
     keyring::{KeyEntry, KeyRing},
     misbehaviour::MisbehaviourEvidence,
+    snapshot::psql::update_snapshot,
+    snapshot::{IbcData, IbcSnapshot, Key, PacketId},
 };
-
-use self::snapshot::{IbcData, IbcSnapshot};
 
 pub mod batch;
 pub mod events;
 pub mod query;
-pub mod snapshot;
 pub mod wait;
 
 flex_error::define_error! {
