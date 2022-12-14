@@ -10,3 +10,10 @@ updates:
     # Check the cargo registry for updates every week
     schedule:
       interval: "weekly"
+  # Enable version updates for githubactions
+  - package-ecosystem: "github-actions"
+    # limit no of pull request dependabot can open
+    open-pull-requests-limit: 10
+    directory: "/"
+    schedule:
+      interval: "weekly"
